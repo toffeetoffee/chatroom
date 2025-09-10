@@ -1,0 +1,87 @@
+from flask import Flask, render_template, request
+from flask_socketio import SocketIO, emit, join_room, leave_room
+import string
+import random
+import os
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+# In-memory storage for rooms
+rooms = {}
+
+def generate_room_code():
+    """Generate a random 6-character room code"""
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/room/<room_code>')
+def room(room_code):
+    if room_code not in rooms:
+        return "Room not found", 404
+    return render_template('room.html', room_code=room_code)
+
+@socketio.on('create_room')
+def handle_create_room():
+    room_code = generate_room_code()
+    while room_code in rooms:  # Ensure unique room code
+        room_code = generate_room_code()
+    
+    rooms[room_code] = {
+        'content': '',
+        'users': []
+    }
+    
+    emit('room_created', {'room_code': room_code})
+
+@socketio.on('join_room_request')
+def handle_join_room(data):
+    room_code = data['room_code'].upper()
+    if room_code in rooms:
+        emit('join_room_success', {'room_code': room_code})
+    else:
+        emit('join_room_error', {'message': 'Room not found'})
+
+@socketio.on('join')
+def on_join(data):
+    room_code = data['room']
+    if room_code in rooms:
+        join_room(room_code)
+        rooms[room_code]['users'].append(request.sid)
+        # Send current content to the new user
+        emit('content_update', {'content': rooms[room_code]['content']})
+        emit('user_joined', {'message': f'User joined the room'}, room=room_code)
+
+@socketio.on('leave')
+def on_leave(data):
+    room_code = data['room']
+    if room_code in rooms and request.sid in rooms[room_code]['users']:
+        leave_room(room_code)
+        rooms[room_code]['users'].remove(request.sid)
+        emit('user_left', {'message': f'User left the room'}, room=room_code)
+
+@socketio.on('text_change')
+def handle_text_change(data):
+    room_code = data['room']
+    content = data['content']
+    
+    if room_code in rooms:
+        rooms[room_code]['content'] = content
+        # Broadcast to all users in the room except sender
+        emit('content_update', {'content': content}, room=room_code, include_self=False)
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    # Remove user from all rooms they were in
+    for room_code in rooms:
+        if request.sid in rooms[room_code]['users']:
+            rooms[room_code]['users'].remove(request.sid)
+            emit('user_left', {'message': f'User disconnected'}, room=room_code)
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chatroom</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Simple Chatroom</h1>
+        
+        <div class="options">
+            <div class="option-card">
+                <h2>Create Room</h2>
+                <p>Start a new room and get a room code to share</p>
+                <button id="createRoomBtn" class="btn">Create Room</button>
+            </div>
+            
+            <div class="option-card">
+                <h2>Join Room</h2>
+                <p>Enter a room code to join an existing room</p>
+                <input type="text" id="roomCodeInput" placeholder="Enter room code" maxlength="6">
+                <button id="joinRoomBtn" class="btn">Join Room</button>
+            </div>
+        </div>
+        
+        <div id="errorMessage" class="error hidden"></div>
+        <div id="successMessage" class="success hidden"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

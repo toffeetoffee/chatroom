@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room {{ room_code }} - Simple Chatroom</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='room-style.css') }}">
+</head>
+<body>
+    <div class="room-header">
+        <div class="room-info">
+            <h2>Room Code: <span id="roomCode">{{ room_code }}</span></h2>
+            <button id="copyCodeBtn" class="copy-btn">Copy Code</button>
+        </div>
+        <a href="/" class="leave-btn">Leave Room</a>
+    </div>
+    
+    <div class="typing-area">
+        <textarea 
+            id="textArea" 
+            placeholder="Start typing... Your text will appear here in real-time for everyone in the room."
+        ></textarea>
+    </div>
+    
+    <div id="statusMessage" class="status hidden"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        const roomCode = '{{ room_code }}';
+    </script>
+    <script src="{{ url_for('static', filename='room-script.js') }}"></script>
+</body>
+</html>
